@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import express from "express";
 import bodyParser from "body-parser";
 import UserRouter from "./routes/userRoutes.js";
+import ProducrRouter from "./routes/productRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -20,6 +21,7 @@ mongoose.connection.once("open", () => {
 });
 app.use(bodyParser.json());
 app.use("/api", UserRouter);
+app.use("/api", ProducrRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
