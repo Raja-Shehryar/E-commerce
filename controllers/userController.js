@@ -1,25 +1,85 @@
 import Users from "../models/userModel.js";
-// Creating new User
-const createUser = async (req, res) => {
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+//register with auth
+const register = async (req, res) => {
   try {
-    const newUser = new Users(req.body);
+    const {
+      firstName,
+      lastName,
+      isAdmin,
+      address,
+      profilePicture,
+      email,
+      phoneNumber,
+      password,
+    } = req.body;
+    const userExist = await Users.findOne({ email });
+    if (userExist) {
+      res.status(400).json({ message: "user already exists" });
+    }
+    const hashPassword = bcrypt.hash(password, 10);
+    const newUser = Users({
+      firstName,
+      lastName,
+      isAdmin,
+      address,
+      profilePicture,
+      email,
+      phoneNumber,
+      password: (await hashPassword).toString(),
+    });
     const savedUser = await newUser.save();
-    res.json(savedUser);
+    res
+      .status(200)
+      .json({ savedUser, message: "user successfully registered" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error creating user" });
+    res.status(400).json({ message: err.message });
   }
 };
-//Getting data for all users
-const getAllUsers = async (req, res) => {
+
+//login with auth
+const login = async (req, res) => {
   try {
-    const User = await Users.find();
-    res.json(User);
+    const { email, password } = req.body;
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "user not found" });
+    }
+    const passwordMatch = bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "invalid credentials" });
+    }
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECURE,
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({ message: "login successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error creating user" });
+    res.status(200).json({ message: err.message });
   }
 };
+// // Creating new User
+// const createUser = async (req, res) => {
+//   try {
+//     const newUser = new Users(req.body);
+//     const savedUser = await newUser.save();
+//     res.json(savedUser);
+//   } catch (err) {
+//     res.status(500).json({ error: "Error creating user" });
+//   }
+// };
+// //Getting data for all users
+// const getAllUsers = async (req, res) => {
+//   try {
+//     const User = await Users.find();
+//     res.json(User);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Error creating user" });
+//   }
+// };
 const getSingleUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,10 +119,4 @@ const deleteSingleUser = async (req, res) => {
   }
 };
 
-export {
-  createUser,
-  getAllUsers,
-  getSingleUser,
-  updateSingleUser,
-  deleteSingleUser,
-};
+export { register, login, getSingleUser, updateSingleUser, deleteSingleUser };

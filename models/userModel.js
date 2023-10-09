@@ -24,6 +24,13 @@ const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: Number,
   },
+  password: {
+    type: String,
+    required: true,
+  },
+  otp: {
+    type: String,
+  },
 });
 
 const Users = mongoose.model("Users", userSchema);
